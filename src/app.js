@@ -55,11 +55,12 @@ async function scrapeStation(stationId) {
       return rows;
     });
 
-    console.log(data);
     await browser.close();
+    return data;
   } catch (err) {
     console.log('Error: ', err.stack);
   }
 }
 
-scrapeStation(1);
+// Test run method
+console.log(await scrapeStation(1));
