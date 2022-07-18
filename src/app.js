@@ -48,7 +48,8 @@ async function scrapeStation(stationId) {
           windDir: cols[1 + colOffset].querySelector('img').title,
         };
 
-        rows.push(col);
+        // Unshift gives us time ascending ordering that we can use to search for timestamps
+        rows.unshift(col);
       });
 
       return rows;
