@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer';
 
 const URL = 'https://en.vedur.is/weather/observations/areas/#station=';
 
-async function scrapeStation(stationId) {
+async function scrapeStation(stationId, olderThan12h) {
   try {
     const browser = await puppeteer.launch({
       headless: true, // Can set to false to see what is being done
@@ -13,7 +13,7 @@ async function scrapeStation(stationId) {
     const page = await browser.newPage();
 
     await page.goto(URL + stationId); // Grab observations for station id
-    await page.click('#stablink1'); // Click on 6 day history
+    if (olderThan12h) await page.click('#stablink1'); // Click on 6 day history
     const data = await page.evaluate(() => {
       const rows = [];
       const items = document.querySelectorAll('tr');
@@ -62,5 +62,5 @@ async function scrapeStation(stationId) {
   }
 }
 
-// Test run method
-console.log(await scrapeStation(1));
+// false for 12h, true for 6d
+console.log(await scrapeStation(1, false));
