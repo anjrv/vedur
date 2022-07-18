@@ -41,7 +41,7 @@ async function scrapeStation(stationId) {
           .replace(/\s/g, '')
           .split('/');
 
-        const col = {
+        const row = {
           time: date,
           windAvg: windSpeed[0],
           windMax: windSpeed[1],
@@ -49,7 +49,7 @@ async function scrapeStation(stationId) {
         };
 
         // Unshift gives us time ascending ordering that we can use to search for timestamps
-        rows.unshift(col);
+        rows.unshift(row);
       });
 
       return rows;
