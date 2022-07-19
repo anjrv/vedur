@@ -2,9 +2,16 @@ import { stations } from './stations.js';
 import { scrapeStation } from './scraper.js';
 // import { writeWorkingStations } from './utils.js';
 
+/**
+ * Fetches an array of length k stations nearest to the coordinates
+ *
+ * @returns an array of stations
+ */
 async function findKNearestStations(lat, lon, k) {
   const s = stations;
 
+  // Could speed this up by using divide and conquer on one point val
+  // But considering the list of responding stations is small, meh...
   function compareStation(a, b) {
     const aDist = Math.sqrt(
       Math.pow(lat - a.lat, 2) + Math.pow(lon - a.lon, 2)
@@ -31,6 +38,11 @@ async function findKNearestStations(lat, lon, k) {
   return result;
 }
 
+/**
+ * Fetches k arrays of measurements from the stations nearest to the coordinates
+ *
+ * @returns An object of k station: measurements[] pairs 
+ */
 async function findKNearestMeasurements(lat, lon, k) {
   const s = await findKNearestStations(lat, lon, k);
 
@@ -50,4 +62,5 @@ async function findKNearestMeasurements(lat, lon, k) {
 // { id: 571, name: 'Egilsstaðaflugvöllur', lat: 65.283, lon: -14.4025 },
 console.log(await findKNearestMeasurements(65.283, -14.4025, 1));
 
+// This is kind of a dick move...
 // await writeWorkingStations();

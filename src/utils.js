@@ -1,5 +1,12 @@
 import fs from 'fs';
 
+import { stations } from './stations.js';
+
+/**
+ * Queries every station in stations to see if it responds with a table
+ *
+ * @returns an array containing every station object that responds
+ */
 async function getRespondingStations() {
   const s = stations;
   const responded = [];
@@ -28,6 +35,9 @@ async function getRespondingStations() {
   return await run();
 }
 
+/**
+ * Query stations for all responding stations and write them to a json file
+ */
 export async function writeRespondingStations() {
   const responded = await getRespondingStations();
 
