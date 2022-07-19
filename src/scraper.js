@@ -1,6 +1,6 @@
-const URL = 'https://en.vedur.is/weather/observations/areas/#station=';
-
 import puppeteer from 'puppeteer';
+
+const URL = 'https://en.vedur.is/weather/observations/areas/#station=';
 
 /**
  * Scrapes the measurement table for the given station id
