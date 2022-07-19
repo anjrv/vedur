@@ -1,3 +1,4 @@
+// from respondingStations.json
 export const stations = [
   { id: 1, name: 'Reykjavík', lat: 64.1275, lon: -21.9028 },
   { id: 6657, name: 'Veiðivatnahraun', lat: 64.3951, lon: -18.5048 },
