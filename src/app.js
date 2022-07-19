@@ -1,4 +1,7 @@
 import puppeteer from 'puppeteer';
+import fs from 'fs';
+
+import { stations } from './stations.js';
 
 const URL = 'https://en.vedur.is/weather/observations/areas/#station=';
 
@@ -62,5 +65,85 @@ async function scrapeStation(stationId, olderThan12h) {
   }
 }
 
-// false for 12h, true for 6d
-console.log(await scrapeStation(1, false));
+async function findKNearestStations(lat, lon, k) {
+  const s = stations;
+
+  function compareStation(a, b) {
+    const aDist = Math.sqrt(
+      Math.pow(lat - a.lat, 2) + Math.pow(lon - a.lon, 2)
+    );
+    const bDist = Math.sqrt(
+      Math.pow(lat - b.lat, 2) + Math.pow(lon - b.lon, 2)
+    );
+
+    if (aDist < bDist) return -1;
+
+    if (aDist > bDist) return 1;
+
+    return 0;
+  }
+
+  s.sort(compareStation);
+
+  const result = [];
+
+  for (let i = 0; i < k; i += 1) {
+    result.push(s[i]);
+  }
+
+  return result;
+}
+
+async function findKNearestMeasurements(lat, lon, k) {
+  const s = await findKNearestStations(lat, lon, k);
+
+  const measurements = {};
+
+  for (let i = 0; i < s.length; i += 1) {
+    // False for 12h, true for 6d
+    const m = await scrapeStation(s[i].id, false);
+
+    measurements[s[i].name] = m;
+  }
+
+  return measurements;
+}
+
+async function getRespondingStations() {
+  const s = stations;
+  const responded = [];
+
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  let N = s.length;
+
+  async function run() {
+    for (let i = 0; i <= N; i += 1) {
+      if (i < N) {
+        await sleep(5000);
+        const m = await scrapeStation(s[i].id, false);
+
+        if (m && m.length > 0) {
+          responded.push(s[i]);
+        }
+      } else {
+        return responded;
+      }
+    }
+  }
+
+  return await run();
+}
+
+async function writeRespondingStations() {
+  const responded = await getRespondingStations();
+
+  if (responded.length > 0) {
+    fs.writeFileSync('./respondingStations.json', JSON.stringify(responded));
+  }
+}
+
+// await writeWorkingStations();
+console.log(await findKNearestMeasurements(65.283, -14.4025, 1));
