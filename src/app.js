@@ -41,9 +41,9 @@ async function findKNearestStations(lat, lon, k) {
 /**
  * Fetches k arrays of measurements from the stations nearest to the coordinates
  *
- * @returns An object of k station: measurements[] pairs 
+ * @returns An object of k station: measurements[] pairs
  */
-async function findKNearestMeasurements(lat, lon, k) {
+async function findKNearestStationMeasurements(lat, lon, k) {
   const s = await findKNearestStations(lat, lon, k);
 
   const measurements = {};
@@ -51,7 +51,6 @@ async function findKNearestMeasurements(lat, lon, k) {
   for (let i = 0; i < s.length; i += 1) {
     // False for 12h, true for 6d
     const m = await scrapeStation(s[i].id, false);
-
     measurements[s[i].name] = m;
   }
 
@@ -60,7 +59,10 @@ async function findKNearestMeasurements(lat, lon, k) {
 
 // Should query this station, otherwise I fucked up
 // { id: 571, name: 'Egilsstaðaflugvöllur', lat: 65.283, lon: -14.4025 },
-console.log(await findKNearestMeasurements(65.283, -14.4025, 1));
+// console.log(await findKNearestMeasurements(65.283, -14.4025, 1));
+
+// Hvassahraun ish???
+console.log(await findKNearestStationMeasurements(64.021261, -22.1503, 3));
 
 // This is kind of a dick move...
 // await writeWorkingStations();
