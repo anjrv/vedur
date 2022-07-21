@@ -49,7 +49,11 @@ Arguments have to be supplied in the above order.
 Examples:
 ```
 npm run search -- 64.0212 -22.1503
+```
+```
 npm run search -- 64.0212 -22.1503 2022/07/21
+```
+```
 npm run search -- 64.0212 -22.1503 2022/07/21 2
 ```
 
