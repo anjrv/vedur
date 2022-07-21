@@ -49,5 +49,6 @@ export async function writeRespondingStations() {
   }
 }
 
-// Run call for script
-await writeRespondingStations();
+await writeRespondingStations().catch((err) => {
+  console.error(err.stack);
+});
