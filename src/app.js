@@ -1,68 +1,79 @@
-import { stations } from './stations.js';
-import { scrapeStation } from './scraper.js';
-// import { writeWorkingStations } from './utils.js';
+import { findKNearestStationMeasurements } from './search.js';
+import { isInt, validateNumber, validateDate } from './typechecking.js';
 
-/**
- * Fetches an array of length k stations nearest to the coordinates
- *
- * @returns an array of stations
- */
-async function findKNearestStations(lat, lon, k) {
-  const s = stations;
-
-  // Could speed this up by using divide and conquer on one point val
-  // But considering the list of responding stations is small, meh...
-  function compareStation(a, b) {
-    const aDist = Math.sqrt(
-      Math.pow(lat - a.lat, 2) + Math.pow(lon - a.lon, 2)
-    );
-    const bDist = Math.sqrt(
-      Math.pow(lat - b.lat, 2) + Math.pow(lon - b.lon, 2)
-    );
-
-    if (aDist < bDist) return -1;
-
-    if (aDist > bDist) return 1;
-
-    return 0;
+function validateArgs(args) {
+  if (args.length < 2 || args.length > 4) {
+    console.log('Invalid number of arguments');
+    return false;
   }
 
-  s.sort(compareStation);
-
-  const result = [];
-
-  for (let i = 0; i < k; i += 1) {
-    result.push(s[i]);
+  if (!validateNumber(Number(args[0]))) {
+    console.log('Latitude is invalid');
+    return false;
   }
 
-  return result;
+  if (!validateNumber(Number(args[1]))) {
+    console.log('Longitude is invalid');
+    return false;
+  }
+
+  if (args[2] && !validateDate(args[2])) {
+    console.log('Date is invalid');
+    return false;
+  }
+
+  if (args[3] && !isInt(args[3])) {
+    console.log('Number of stations is invalid');
+    return false;
+  }
+
+  return true;
 }
 
-/**
- * Fetches k arrays of measurements from the stations nearest to the coordinates
- *
- * @returns An object of k station: measurements[] pairs
- */
-async function findKNearestStationMeasurements(lat, lon, k) {
-  const s = await findKNearestStations(lat, lon, k);
+async function respond() {
+  if (process.env.npm_config_listen) {
+    console.log('TODO!');
+  } else {
+    const args = process.argv.slice(2);
 
-  const measurements = {};
+    if (!validateArgs(args)) {
+      return;
+    }
 
-  for (let i = 0; i < s.length; i += 1) {
-    // False for 12h, true for 6d
-    const m = await scrapeStation(s[i].id, false);
-    measurements[s[i].name] = m;
+    if (args.length === 2) {
+      console.log(
+        await findKNearestStationMeasurements(args[0], args[1], false, 1)
+      );
+
+      return;
+    }
+
+    const age = Math.ceil(
+      (new Date(args[2]).getTime() - new Date().getTime()) / (1000 * 3600 * 24)
+    );
+
+    if (args.length === 3) {
+      console.log(
+        await findKNearestStationMeasurements(args[0], args[1], age > 1, 1)
+      );
+
+      return;
+    }
+
+    console.log(
+      await findKNearestStationMeasurements(args[0], args[1], age > 1, args[3])
+    );
+
+    return;
   }
-
-  return measurements;
 }
 
-// Should query this station, otherwise I fucked up
-// { id: 571, name: 'Egilsstaðaflugvöllur', lat: 65.283, lon: -14.4025 },
-// console.log(await findKNearestMeasurements(65.283, -14.4025, 1));
+await respond().catch((err) => {
+  // Should query this station, otherwise I fucked up
+  // { id: 571, name: 'Egilsstaðaflugvöllur', lat: 65.283, lon: -14.4025 },
+  // 65.283, -14.4025
 
-// Hvassahraun ish???
-console.log(await findKNearestStationMeasurements(64.021261, -22.1503, 3));
-
-// This is kind of a dick move...
-// await writeWorkingStations();
+  // Hvassahraun ish???
+  // 64.021261 -22.1503
+  console.error(err.stack);
+});

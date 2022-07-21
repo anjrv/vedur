@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-import { stations } from './stations.js';
+import { scrapeStation } from './scraper.js';
 
 /**
  * Queries every station in stations to see if it responds with a table
@@ -8,7 +8,7 @@ import { stations } from './stations.js';
  * @returns an array containing every station object that responds
  */
 async function getRespondingStations() {
-  const s = stations;
+  const s = JSON.parse(fs.readFileSync('./data/allStations.json'));
   const responded = [];
 
   function sleep(ms) {
@@ -20,7 +20,7 @@ async function getRespondingStations() {
   async function run() {
     for (let i = 0; i <= N; i += 1) {
       if (i < N) {
-        await sleep(5000);
+        await sleep(5000); // Try not to get IP banned...
         const m = await scrapeStation(s[i].id, false);
 
         if (m && m.length > 0) {
@@ -42,7 +42,12 @@ export async function writeRespondingStations() {
   const responded = await getRespondingStations();
 
   if (responded.length > 0) {
-    fs.writeFileSync('./respondingStations.json', JSON.stringify(responded));
+    fs.writeFileSync(
+      './data/respondingStations.json',
+      JSON.stringify(responded)
+    );
   }
 }
 
+// Run call for script
+await writeRespondingStations();

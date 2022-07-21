@@ -4,7 +4,8 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start": "node ./src/app.js"
+    "search": "node ./src/app.js",
+    "stations": "node ./src/utils.js"
   },
   "keywords": [],
   "author": "",
