@@ -1,8 +1,9 @@
 # Weather observation scraper for `vedur.is`
 
 ## Install NodeJS:
-
-* `https://nodejs.org/en/download/`
+```
+https://nodejs.org/en/download/
+```
 
 ## Set up dependencies (in project root):
 ```
