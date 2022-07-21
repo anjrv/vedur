@@ -1,10 +1,11 @@
 # Weather observation scraper for `vedur.is`
 
-## Setup (in project root):
-```
-# A recent version of NodeJS and NPM has to be installed
+## Install NodeJS:
 
-# Install dependencies
+* `https://nodejs.org/en/download/`
+
+## Set up dependencies (in project root):
+```
 npm install
 ```
 
