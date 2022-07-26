@@ -1,4 +1,4 @@
-import { findKNearestStationMeasurements } from './search.js';
+import { findKNearestGroundStationMeasurements } from './search.js';
 import { isInt, validateNumber, validateDate } from './typechecking.js';
 
 function validateArgs(args) {
@@ -42,7 +42,7 @@ async function respond() {
 
     if (args.length === 2) {
       console.log(
-        await findKNearestStationMeasurements(args[0], args[1], false, 1)
+        await findKNearestGroundStationMeasurements(args[0], args[1], false, 1)
       );
 
       return;
@@ -54,14 +54,14 @@ async function respond() {
 
     if (args.length === 3) {
       console.log(
-        await findKNearestStationMeasurements(args[0], args[1], age > 1, 1)
+        await findKNearestGroundStationMeasurements(args[0], args[1], age > 1, 1)
       );
 
       return;
     }
 
     console.log(
-      await findKNearestStationMeasurements(args[0], args[1], age > 1, args[3])
+      await findKNearestGroundStationMeasurements(args[0], args[1], age > 1, args[3])
     );
 
     return;

@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "search": "node ./src/app.js",
-    "stations": "node ./src/utils.js"
+    "generateGroundStations": "node ./src/generateGroundStations.js",
+    "generateAirStations": "node ./src/generateAirStations.js"
   },
   "keywords": [],
   "author": "",

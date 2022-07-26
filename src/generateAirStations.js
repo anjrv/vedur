@@ -1,13 +1,13 @@
 import fs from 'fs';
 
-import { scrapeStation } from './scraper.js';
+import { scrapeAirStations } from './scraper.js';
 
 /**
  * Queries every station in stations to see if it responds with a table
  *
  * @returns an array containing every station object that responds
  */
-async function getRespondingStations() {
+async function getRespondingAirStations() {
   const s = JSON.parse(fs.readFileSync('./data/allStations.json'));
   const responded = [];
 
@@ -21,7 +21,8 @@ async function getRespondingStations() {
     for (let i = 0; i <= N; i += 1) {
       if (i < N) {
         await sleep(5000); // Try not to get IP banned...
-        const m = await scrapeStation(s[i].id, false);
+        const m = await scrapeAirStations(s[i].id);
+        console.log(m);
 
         if (m && m.length > 0) {
           responded.push(s[i]);
@@ -38,17 +39,17 @@ async function getRespondingStations() {
 /**
  * Query stations for all responding stations and write them to a json file
  */
-export async function writeRespondingStations() {
-  const responded = await getRespondingStations();
+export async function writeRespondingAirStations() {
+  const responded = await getRespondingAirStations();
 
   if (responded.length > 0) {
     fs.writeFileSync(
-      './data/respondingStations.json',
+      './data/respondingAirStations.json',
       JSON.stringify(responded)
     );
   }
 }
 
-await writeRespondingStations().catch((err) => {
+await writeRespondingAirStations().catch((err) => {
   console.error(err.stack);
 });

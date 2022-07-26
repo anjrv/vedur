@@ -1,0 +1,146 @@
+[
+  {
+    "id": 1,
+    "name": "Reykjavík",
+    "lat": 64.1275,
+    "lon": -21.9028
+  },
+  {
+    "id": 6657,
+    "name": "Veiðivatnahraun",
+    "lat": 64.3951,
+    "lon": -18.5048
+  },
+  {
+    "id": 527,
+    "name": "Skjaldþingsstaðir",
+    "lat": 65.7027,
+    "lon": -14.8211
+  },
+  {
+    "id": 571,
+    "name": "Egilsstaðaflugvöllur",
+    "lat": 65.283,
+    "lon": -14.4025
+  },
+  {
+    "id": 3696,
+    "name": "Húsavík",
+    "lat": 66.0418,
+    "lon": -17.3281
+  },
+  {
+    "id": 6272,
+    "name": "Kirkjubæjarklaustur - Stjórnarsandur",
+    "lat": 63.793,
+    "lon": -18.0119
+  },
+  {
+    "id": 3751,
+    "name": "Sauðanesviti",
+    "lat": 66.1845,
+    "lon": -18.9534
+  },
+  {
+    "id": 2738,
+    "name": "Bolungarvík",
+    "lat": 66.161,
+    "lon": -23.2538
+  },
+  {
+    "id": 178,
+    "name": "Stykkishólmur",
+    "lat": 65.074,
+    "lon": -22.7339
+  },
+  {
+    "id": 4828,
+    "name": "Raufarhöfn",
+    "lat": 66.456,
+    "lon": -15.9527
+  },
+  {
+    "id": 1779,
+    "name": "Hvanneyri",
+    "lat": 64.5622,
+    "lon": -21.7649
+  },
+  {
+    "id": 3317,
+    "name": "Blönduós",
+    "lat": 65.658,
+    "lon": -20.2925
+  },
+  {
+    "id": 2319,
+    "name": "Patreksfjörður",
+    "lat": 65.5951,
+    "lon": -23.9748
+  },
+  {
+    "id": 6420,
+    "name": "Árnes",
+    "lat": 64.0405,
+    "lon": -20.2521
+  },
+  {
+    "id": 6935,
+    "name": "Hveravellir",
+    "lat": 64.8668,
+    "lon": -19.5622
+  },
+  {
+    "id": 5933,
+    "name": "Kárahnjúkar",
+    "lat": 64.9284,
+    "lon": -15.7771
+  },
+  {
+    "id": 6975,
+    "name": "Sandbúðir",
+    "lat": 64.933,
+    "lon": -17.983
+  },
+  {
+    "id": 32097,
+    "name": "Holtavörðuheiði",
+    "lat": 64.9899,
+    "lon": -21.0576
+  },
+  {
+    "id": 6017,
+    "name": "Stórhöfði",
+    "lat": 63.3996,
+    "lon": -20.2882
+  },
+  {
+    "id": 422,
+    "name": "Akureyri",
+    "lat": 65.6856,
+    "lon": -18.1002
+  },
+  {
+    "id": 5544,
+    "name": "Höfn í Hornafirði",
+    "lat": 64.2691,
+    "lon": -15.2135
+  },
+  {
+    "id": 2481,
+    "name": "Hólmavík",
+    "lat": 65.6873,
+    "lon": -21.6813
+  },
+  {
+    "id": 495,
+    "name": "Grímsstaðir",
+    "lat": 65.6423,
+    "lon": -16.1208
+  },
+  {
+    "id": 35315,
+    "name": "Kvísker Vegagerðarstöð",
+    "lat": 63.9596,
+    "lon": -16.4244
+  }
+]

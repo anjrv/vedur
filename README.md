@@ -12,10 +12,10 @@ npm install
 
 ## Format:
 
-* `/data`, json files that contain an array of stations
-* `/src/scraper.js`, implementation for the web scraper
-* `/src/stations.js`, json array of stations that respond
-* `/src/utils.js`, helper functions
+* `/data`, json files for stations
+* `/src/scraper.js`, web scraper functions
+* `/src/generateAirStations.js`, helpers to regenerate responding air stations
+* `/src/generateGroundStations.js`, helpers to regenerate responding ground stations
 * `/src/app.js`, main entry point and middleware filtering
 
 ## Usage:
@@ -25,7 +25,9 @@ npm install
 ### To regenerate responding stations in case something has changed:
 
 ```
-npm run stations
+npm run generateAirStations
+
+npm run generateGroundStations
 ```
 
 ### To run a single query:
@@ -59,6 +61,7 @@ npm run search -- 64.0212 -22.1503 2022/07/21 2
 
 ## TODO:
 
-* Provide a command line stdIn listener variant
+* Add SQLite storage option for air stations
+* Add air station data to main search function
 * Provide a middleware function to get nearest neighbor by date
 * Provide a middleware function to interpolate from 3 surrounding stations

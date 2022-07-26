@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer';
 
-const URL = 'https://en.vedur.is/weather/observations/areas/#station=';
+const GROUND_URL = 'https://en.vedur.is/weather/observations/areas/#station=';
+const AIR_URL = 'https://vedur.is/vedur/flugvedur/vedurathuganir/';
 
 /**
  * Scrapes the measurement table for the given station id
@@ -9,7 +10,7 @@ const URL = 'https://en.vedur.is/weather/observations/areas/#station=';
  * @param olderThan12h whether 6 day measurements should be added
  * @returns an array of measurement objects
  */
-export async function scrapeStation(stationId, olderThan12h) {
+export async function scrapeGroundStations(stationId, olderThan12h) {
   try {
     const browser = await puppeteer.launch({
       headless: true, // Can set to false to see what is being done
@@ -19,7 +20,7 @@ export async function scrapeStation(stationId, olderThan12h) {
 
     const page = await browser.newPage();
 
-    await page.goto(URL + stationId); // Grab observations for station id
+    await page.goto(GROUND_URL + stationId); // Grab observations for station id
     if (olderThan12h) await page.click('#stablink1'); // Click on 6 day history
     const data = await page.evaluate(() => {
       const rows = [];
@@ -56,6 +57,52 @@ export async function scrapeStation(stationId, olderThan12h) {
         };
 
         // Unshift gives us time ascending ordering that we can use to search for timestamps
+        rows.unshift(row);
+      });
+
+      return rows;
+    });
+
+    await browser.close();
+    return data;
+  } catch (err) {
+    console.log('Error: ', err.stack);
+  }
+}
+
+export async function scrapeAirStations(stationId) {
+  try {
+    const browser = await puppeteer.launch({
+      headless: true, // Can set to false to see what is being done
+      args: ['--disable-setuid-sandbox'],
+      ignoreHTTPSErrors: true,
+    });
+
+    const page = await browser.newPage();
+
+    await page.goto(AIR_URL + stationId);
+    const data = await page.evaluate(() => {
+      const rows = [];
+      const items = document.querySelectorAll('tr');
+      const currYear = new Date().getFullYear();
+      items.forEach((item) => {
+        const cols = item.querySelectorAll('td');
+
+        // Not a data row
+        if (!cols[0] || !cols[0].innerText.includes('kl.')) return;
+
+        const dateString = cols[0].innerText.split(/(\s+)/);
+        const d = dateString[2].split('.');
+
+        const date = `${currYear}-${d[1]}-${d[0]}T${dateString[6]}:00.000Z`;
+
+        const row = {
+          time: date,
+          windAvg: (cols[2].innerText * 0.51444).toFixed(3), // Convert to m/s to be consistent
+          windMax: (cols[3].innerText * 0.51444).toFixed(3), // Convert to m/s to be consistent
+          windDir: cols[1].innerText.slice(0, -2),
+        };
+
         rows.unshift(row);
       });
 

@@ -1,19 +1,8 @@
 import fs from 'fs';
 
-import { scrapeStation } from './scraper.js';
+import { scrapeGroundStations } from './scraper.js';
 
-/**
- * Fetches an array of length k stations nearest to the coordinates
- *
- * @returns an array of stations
- */
-export async function findKNearestStations(lat, lon, k, stations = undefined) {
-  const s = stations
-    ? stations
-    : JSON.parse(fs.readFileSync('./data/respondingStations.json'));
-
-  // Could speed this up by using divide and conquer on one point val
-  // But considering the list of responding stations is small, meh...
+async function findKNearestStations(lat, lon, k, stations) {
   function compareStation(a, b) {
     const aDist = Math.sqrt(
       Math.pow(lat - a.lat, 2) + Math.pow(lon - a.lon, 2)
@@ -29,15 +18,51 @@ export async function findKNearestStations(lat, lon, k, stations = undefined) {
     return 0;
   }
 
-  s.sort(compareStation);
+  stations.sort(compareStation);
 
   const result = [];
 
   for (let i = 0; i < k; i += 1) {
-    result.push(s[i]);
+    result.push(stations[i]);
   }
 
   return result;
+}
+
+/**
+ * Fetches an array of length k ground stations nearest to the coordinates
+ *
+ * @returns an array of stations
+ */
+export async function findKNearestGroundStations(
+  lat,
+  lon,
+  k,
+  stations = undefined
+) {
+  const s = stations
+    ? stations
+    : JSON.parse(fs.readFileSync('./data/respondingGroundStations.json'));
+
+  return await findKNearestStations(lat, lon, k, s);
+}
+
+/**
+ * Fetches an array of length k air stations nearest to the coordinates
+ *
+ * @returns an array of stations
+ */
+export async function findKNearestAirStations(
+  lat,
+  lon,
+  k,
+  stations = undefined
+) {
+  const s = stations
+    ? stations
+    : JSON.parse(fs.readFileSync('./data/respondingAirStations.json'));
+
+  return await findKNearestStations(lat, lon, k, s);
 }
 
 /**
@@ -45,20 +70,20 @@ export async function findKNearestStations(lat, lon, k, stations = undefined) {
  *
  * @returns An object of k station: measurements[] pairs
  */
-export async function findKNearestStationMeasurements(
+export async function findKNearestGroundStationMeasurements(
   lat,
   lon,
   extra,
   k,
   stations = undefined
 ) {
-  const s = await findKNearestStations(lat, lon, k, stations);
+  const s = await findKNearestGroundStations(lat, lon, k, stations);
 
   const measurements = {};
 
   for (let i = 0; i < s.length; i += 1) {
     // False for 12h, true for 6d
-    const m = await scrapeStation(s[i].id, extra);
+    const m = await scrapeGroundStations(s[i].id, extra);
     measurements[s[i].name] = m;
   }
 
