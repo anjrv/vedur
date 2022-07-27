@@ -1,4 +1,6 @@
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import { scrapeAirStations } from './scraper.js';
 
@@ -8,7 +10,14 @@ import { scrapeAirStations } from './scraper.js';
  * @returns an array containing every station object that responds
  */
 async function getRespondingAirStations() {
-  const s = JSON.parse(fs.readFileSync('./data/allStations.json'));
+  const jsonPath = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '..',
+    'data',
+    'allStations.json'
+  );
+
+  const s = JSON.parse(fs.readFileSync(jsonPath));
   const responded = [];
 
   function sleep(ms) {
@@ -43,10 +52,14 @@ export async function writeRespondingAirStations() {
   const responded = await getRespondingAirStations();
 
   if (responded.length > 0) {
-    fs.writeFileSync(
-      './data/respondingAirStations.json',
-      JSON.stringify(responded)
+    const jsonPath = path.join(
+      path.dirname(fileURLToPath(import.meta.url)),
+      '..',
+      'data',
+      'respondingAirStations.json'
     );
+
+    fs.writeFileSync(jsonPath, JSON.stringify(responded));
   }
 }
 

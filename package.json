@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "search": "node ./src/app.js",
+    "store": "node ./src/db.js",
     "generateGroundStations": "node ./src/generateGroundStations.js",
     "generateAirStations": "node ./src/generateAirStations.js"
   },

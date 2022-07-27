@@ -1,6 +1,8 @@
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-import { scrapeGroundStations } from './scraper.js';
+import { scrapeGroundStations, scrapeAirStations } from './scraper.js';
 
 async function findKNearestStations(lat, lon, k, stations) {
   function compareStation(a, b) {
@@ -40,9 +42,14 @@ export async function findKNearestGroundStations(
   k,
   stations = undefined
 ) {
-  const s = stations
-    ? stations
-    : JSON.parse(fs.readFileSync('./data/respondingGroundStations.json'));
+  const jsonPath = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '..',
+    'data',
+    'respondingGroundStations.json'
+  );
+
+  const s = stations ? stations : JSON.parse(fs.readFileSync(jsonPath));
 
   return await findKNearestStations(lat, lon, k, s);
 }
@@ -58,11 +65,40 @@ export async function findKNearestAirStations(
   k,
   stations = undefined
 ) {
-  const s = stations
-    ? stations
-    : JSON.parse(fs.readFileSync('./data/respondingAirStations.json'));
+  const jsonPath = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '..',
+    'data',
+    'respondingAirStations.json'
+  );
+
+  const s = stations ? stations : JSON.parse(fs.readFileSync(jsonPath));
 
   return await findKNearestStations(lat, lon, k, s);
+}
+
+/**
+ * Fetches k arrays of measurements from the stations nearest to the coordinates
+ *
+ * @returns An object of k station: measurements[] pairs
+ */
+export async function findKNearestAirStationMeasurements(
+  lat,
+  lon,
+  k,
+  stations = undefined
+) {
+  const s = await findKNearestAirStations(lat, lon, k, stations);
+
+  const measurements = {};
+
+  for (let i = 0; i < s.length; i += 1) {
+    // False for 12h, true for 6d
+    const m = await scrapeAirStations(s[i].id);
+    measurements[s[i].name] = m;
+  }
+
+  return measurements;
 }
 
 /**

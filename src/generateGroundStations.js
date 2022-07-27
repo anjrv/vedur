@@ -1,4 +1,6 @@
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import { scrapeGroundStations } from './scraper.js';
 
@@ -8,7 +10,14 @@ import { scrapeGroundStations } from './scraper.js';
  * @returns an array containing every station object that responds
  */
 async function getRespondingGroundStations() {
-  const s = JSON.parse(fs.readFileSync('./data/allStations.json'));
+  const jsonPath = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '..',
+    'data',
+    'allStations.json'
+  );
+
+  const s = JSON.parse(fs.readFileSync(jsonPath));
   const responded = [];
 
   function sleep(ms) {
@@ -43,10 +52,14 @@ export async function writeRespondingGroundStations() {
   const responded = await getRespondingGroundStations();
 
   if (responded.length > 0) {
-    fs.writeFileSync(
-      './data/respondingGroundStations.json',
-      JSON.stringify(responded)
+    const jsonPath = path.join(
+      path.dirname(fileURLToPath(import.meta.url)),
+      '..',
+      'data',
+      'respondingGroundStations.json'
     );
+
+    fs.writeFileSync(jsonPath, JSON.stringify(responded));
   }
 }
 
