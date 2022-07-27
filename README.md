@@ -61,7 +61,6 @@ npm run search -- 64.0212 -22.1503 2022/07/21 2
 
 ## TODO:
 
-* Add SQLite storage option for air stations
 * Add air station data to main search function
 * Provide a middleware function to get nearest neighbor by date
 * Provide a middleware function to interpolate from 3 surrounding stations
