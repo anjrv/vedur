@@ -15,5 +15,6 @@ coverage/
 **/.DS_Store
 **/app.log
 **/debug.log
+**/observations.db
 
 .cache/
