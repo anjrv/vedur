@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import { scrapeAirStations } from './scraper.js';
 
 /**
- * Writes the currently available air observations to the database 
+ * Writes the currently available air observations to the database
  */
 async function storeAirObservations() {
   const sql = sqlite3.verbose();
@@ -58,13 +58,13 @@ async function storeAirObservations() {
     insertQuery.finalize();
   }
 
-  let N = s.length;
+  let N = s.stations.length;
 
   async function run() {
     for (let i = 0; i <= N; i += 1) {
       if (i < N) {
         await sleep(5000); // Try not to get IP banned...
-        const m = await scrapeAirStations(s[i].id);
+        const m = await scrapeAirStations(s.stations[i].id);
 
         if (m?.length > 0) {
           insert(s[i].id, m);

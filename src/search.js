@@ -49,7 +49,9 @@ export async function findKNearestGroundStations(
     'respondingGroundStations.json'
   );
 
-  const s = stations ? stations : JSON.parse(fs.readFileSync(jsonPath));
+  const s = stations
+    ? stations
+    : JSON.parse(fs.readFileSync(jsonPath)).stations;
 
   return await findKNearestStations(lat, lon, k, s);
 }
@@ -72,7 +74,7 @@ export async function findKNearestAirStations(
     'respondingAirStations.json'
   );
 
-  const s = stations ? stations : JSON.parse(fs.readFileSync(jsonPath));
+  const s = stations ? stations : JSON.parse(fs.readFileSync(jsonPath)).stations;
 
   return await findKNearestStations(lat, lon, k, s);
 }

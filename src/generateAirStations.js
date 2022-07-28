@@ -18,25 +18,34 @@ async function getRespondingAirStations() {
   );
 
   const s = JSON.parse(fs.readFileSync(jsonPath));
-  const responded = [];
 
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
+
+  const stations = [];
+  const bounds = { minLat: 1000, maxLat: -1000, minLon: 1000, maxLon: -1000 };
 
   let N = s.length;
 
   async function run() {
     for (let i = 0; i <= N; i += 1) {
       if (i < N) {
-        await sleep(5000); // Try not to get IP banned...
+        await sleep(5000);
         const m = await scrapeAirStations(s[i].id);
         console.log(m);
 
-        if (m && m.length > 0) {
-          responded.push(s[i]);
+        if (m?.length > 0) {
+          stations.push(s[i]);
+          bounds.minLat = s[i].lat < bounds.minLat ? s[i].lat : bounds.minLat;
+          bounds.maxLat = s[i].lat > bounds.maxLat ? s[i].lat : bounds.maxLat;
+          bounds.minLon = s[i].lon < bounds.minLon ? s[i].lon : bounds.minLon;
+          bounds.maxLon = s[i].lon > bounds.maxLon ? s[i].lon : bounds.maxLon;
         }
       } else {
+        const responded = {};
+        responded.stations = stations;
+        responded.bounds = bounds;
         return responded;
       }
     }
@@ -51,7 +60,7 @@ async function getRespondingAirStations() {
 export async function writeRespondingAirStations() {
   const responded = await getRespondingAirStations();
 
-  if (responded.length > 0) {
+  if (responded?.stations.length > 0) {
     const jsonPath = path.join(
       path.dirname(fileURLToPath(import.meta.url)),
       '..',
