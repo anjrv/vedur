@@ -61,7 +61,7 @@ async function storeAirObservations() {
     insertQuery.finalize();
   }
 
-  let N = s.stations.length;
+  let N = s.length;
 
   async function run() {
     for (let i = 0; i <= N; i += 1) {
@@ -96,4 +96,4 @@ async function main() {
 
 await main().catch((err) => {
   console.error(err.stack);
-});
+})
