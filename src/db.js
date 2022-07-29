@@ -70,6 +70,7 @@ async function storeAirObservations() {
         const m = await scrapeAirStations(s[i].id);
 
         if (m?.length > 0) {
+          console.log(m);
           insert(s[i].id, m);
         }
       } else {
@@ -96,4 +97,4 @@ async function main() {
 
 await main().catch((err) => {
   console.error(err.stack);
-})
+});

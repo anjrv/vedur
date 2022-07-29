@@ -4,6 +4,15 @@ import { fileURLToPath } from 'url';
 
 import { scrapeGroundStations, scrapeAirStations } from './scraper.js';
 
+const MINUTE = 60000;
+const HOUR = 3600000;
+
+function roundToNearestMinute(date, minutes) {
+  const ms = MINUTE * minutes;
+
+  return new Date(Math.round(Date.parse(date) / ms) * ms);
+}
+
 function inTriangle(point, triangle) {
   const cx = point[0],
     cy = point[1],
@@ -82,13 +91,17 @@ function findSurroundingStationsOrNearest(lat, lon, stations) {
             ]
           )
         )
-          return [stations[i].id, stations[j].id, stations[k].id];
+          return [
+            { id: stations[i].id, lat: stations[i].lat, lon: stations[i].lon },
+            { id: stations[j].id, lat: stations[j].lat, lon: stations[j].lon },
+            { id: stations[k].id, lat: stations[k].lat, lon: stations[k].lon },
+          ];
       }
     }
   }
 
   // Fallback single nearest station
-  return [stations[0].id];
+  return [{ id: stations[0].id, lat: stations[0].lat, lon: stations[0].lon }];
 }
 
 function findSurroundingAirStationsOrNearest(lat, lon, stations = undefined) {
@@ -240,3 +253,118 @@ export async function findKNearestGroundStationMeasurements(
 
   return measurements;
 }
+
+export async function lookUpAirMeasurements(
+  lat,
+  lon,
+  date,
+  stations = undefined,
+  bounds = undefined
+) {
+  const jsonPath = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '..',
+    'data',
+    'respondingAirStations.json'
+  );
+
+  let s = stations;
+  let b = bounds;
+
+  if (!s || !b) {
+    const stationData = JSON.parse(fs.readFileSync(jsonPath));
+    s = stationData.stations;
+    b = stationData.bounds;
+  }
+
+  const now = new Date().getTime();
+  const dateMs = Date.parse(date);
+  const fresh = now - dateMs < HOUR * 4;
+  const matchTime = Date.parse(roundToNearestMinute(date, 10));
+  const measurements = [];
+  let weights = null;
+
+  if (
+    lat >= b.minLat &&
+    lat <= b.maxLat &&
+    lon >= b.minLon &&
+    lon <= b.maxLon
+  ) {
+    const surroundingStations = findSurroundingAirStationsOrNearest(
+      lat,
+      lon,
+      s
+    );
+
+    if (surroundingStations.length === 3) {
+      weights = baryCentricWeights(
+        [lat, lon],
+        [
+          [surroundingStations[0].lat, surroundingStations[0].lon],
+          [surroundingStations[1].lat, surroundingStations[1].lon],
+          [surroundingStations[2].lat, surroundingStations[2].lon],
+        ]
+      );
+    }
+
+    if (fresh) {
+      for (let i = 0; i < surroundingStations.length; i += 1) {
+        const m = await scrapeAirStations(surroundingStations[i].id);
+        measurements.push(m);
+      }
+    } else {
+      console.log('db lookup');
+    }
+  } else {
+    if (fresh) {
+      measurements.push(
+        Object.values(
+          await findKNearestAirStationMeasurements(lat, lon, 1, s)
+        )[0]
+      );
+    } else {
+      console.log('db lookup');
+    }
+  }
+
+  const nearestTimeMeasurements = [];
+
+  for (let i = 0; i < measurements.length; i += 1) {
+    for (let j = 0; j < measurements[i].length; j += 1) {
+      if (Date.parse(measurements[i][j].time) === matchTime) {
+        nearestTimeMeasurements.push(measurements[i][j]);
+      }
+    }
+  }
+
+  if (nearestTimeMeasurements.length === 3) {
+    const windAvg =
+      nearestTimeMeasurements[0].windAvg * weights[0] +
+      nearestTimeMeasurements[1].windAvg * weights[1] +
+      nearestTimeMeasurements[2].windAvg * weights[2];
+
+    const windMax =
+      nearestTimeMeasurements[0].windMax * weights[0] +
+      nearestTimeMeasurements[1].windMax * weights[1] +
+      nearestTimeMeasurements[2].windMax * weights[2];
+
+    // TODO: This doesn't work for near north degrees e.g. 358~2
+    const windDir =
+      nearestTimeMeasurements[0].windDir * weights[0] +
+      nearestTimeMeasurements[1].windDir * weights[1] +
+      nearestTimeMeasurements[2].windDir * weights[2];
+
+    return [windAvg, windMax, windDir];
+  }
+
+  return [
+    nearestTimeMeasurements[0].windAvg,
+    nearestTimeMeasurements[1].windMax,
+    nearestTimeMeasurements[2].windDir,
+  ];
+}
+
+// Test call
+console.log(
+  await lookUpAirMeasurements(64.0212, -22.1503, '2022-07-29T18:29:00.000Z')
+);

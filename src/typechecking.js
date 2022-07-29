@@ -7,5 +7,9 @@ export function validateNumber(number) {
 }
 
 export function validateDate(date) {
-  return isNaN(date) && !isNaN(Date.parse(date));
+  return (
+    isNaN(date) &&
+    !isNaN(Date.parse(date)) &&
+    new Date().getTime() > Date.parse(date)
+  );
 }

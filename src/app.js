@@ -33,6 +33,12 @@ function validateArgs(args) {
   return true;
 }
 
+async function search(lat, lon, date, k = undefined) {
+  const ageDiff = new Date().getTime() - Date.parse(date);
+
+
+}
+
 async function respond() {
   if (process.env.npm_config_listen) {
     console.log('TODO!');
@@ -43,41 +49,11 @@ async function respond() {
       return;
     }
 
-    if (args.length === 2) {
-      console.log(
-        await findKNearestGroundStationMeasurements(args[0], args[1], false, 1)
-      );
-
-      return;
-    }
-
-    const age = Math.ceil(
-      (new Date(args[2]).getTime() - new Date().getTime()) / (1000 * 3600 * 24)
-    );
-
     if (args.length === 3) {
-      console.log(
-        await findKNearestGroundStationMeasurements(
-          args[0],
-          args[1],
-          age > 1,
-          1
-        )
-      );
-
-      return;
+      await search(args[0], args[1], args[2]);
     }
 
-    console.log(
-      await findKNearestGroundStationMeasurements(
-        args[0],
-        args[1],
-        age > 1,
-        args[3]
-      )
-    );
-
-    return;
+    await search(args[0], args[1], args[2], args[3]);
   }
 }
 
