@@ -1,9 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import sqlite3 from 'sqlite3';
+import schedule from 'node-schedule';
 import { fileURLToPath } from 'url';
 
 import { scrapeAirStations } from './scraper.js';
+
+const JOB_ID = 'NODE_AIR_STATION_SCRAPER';
 
 /**
  * Writes the currently available air observations to the database
@@ -36,7 +39,7 @@ async function storeAirObservations() {
     'respondingAirStations.json'
   );
 
-  const s = JSON.parse(fs.readFileSync(jsonPath));
+  const s = JSON.parse(fs.readFileSync(jsonPath)).stations;
 
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -64,7 +67,7 @@ async function storeAirObservations() {
     for (let i = 0; i <= N; i += 1) {
       if (i < N) {
         await sleep(5000); // Try not to get IP banned...
-        const m = await scrapeAirStations(s.stations[i].id);
+        const m = await scrapeAirStations(s[i].id);
 
         if (m?.length > 0) {
           insert(s[i].id, m);
@@ -79,6 +82,18 @@ async function storeAirObservations() {
   db.close();
 }
 
-await storeAirObservations().catch((err) => {
+async function main() {
+  const args = process.argv.slice(2);
+
+  if (args[0] === 'repeat') {
+    schedule.scheduleJob(JOB_ID, '0 0 */4 * * *', async () => {
+      await storeAirObservations();
+    });
+  } else {
+    await storeAirObservations();
+  }
+}
+
+await main().catch((err) => {
   console.error(err.stack);
 });
