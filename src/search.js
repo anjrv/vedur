@@ -608,7 +608,7 @@ function validateArgs(args) {
   return true;
 }
 
-async function search(lat, lon, date) {
+export async function search(lat, lon, date) {
   const ageDiff = new Date().getTime() - Date.parse(date);
 
   let val = await lookUpAirMeasurements(lat, lon, date);
@@ -626,9 +626,9 @@ async function search(lat, lon, date) {
   }
 
   if (Object.values(val).length > 0) {
-    console.log(JSON.stringify(val));
+    return val;
   } else {
-    console.log(JSON.stringify({}));
+    return {};
   }
 }
 
@@ -639,5 +639,5 @@ export async function respond() {
     return;
   }
 
-  await search(args[0], args[1], args[2]);
+  console.log(JSON.stringify(await search(args[0], args[1], args[2])));
 }
