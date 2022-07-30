@@ -53,15 +53,13 @@ export async function storeAirObservations() {
     driver: sqlite3.Database,
   });
 
-  db.getDatabaseInstance().serialize(function () {
-    db.run(`CREATE TABLE IF NOT EXISTS observations (
+  await db.exec(`CREATE TABLE IF NOT EXISTS observations (
         station INTEGER,
         date INTEGER,
         wind_avg REAL,
         wind_max REAL,
         wind_dir INTEGER,
         PRIMARY KEY(station, date))`);
-  });
 
   const jsonPath = path.join(
     path.dirname(fileURLToPath(import.meta.url)),
