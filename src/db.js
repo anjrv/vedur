@@ -1,28 +1,58 @@
 import fs from 'fs';
 import path from 'path';
 import sqlite3 from 'sqlite3';
-import schedule from 'node-schedule';
+import { open } from 'sqlite';
 import { fileURLToPath } from 'url';
 
 import { scrapeAirStations } from './scraper.js';
+import { isInt, validateDate } from './typechecking.js';
 
-const JOB_ID = 'NODE_AIR_STATION_SCRAPER';
+const dbPath = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+  'data',
+  'observations.db'
+);
+
+export async function runQuery(station, date) {
+  let results = {};
+  const d = isInt(date) ? date : validateDate(date) ? Date.parse(date) : null;
+  const s = isInt(station) ? station : null;
+
+  if (!d || !s || !fs.existsSync(dbPath)) return results;
+
+  const db = await open({
+    filename: dbPath,
+    driver: sqlite3.Database,
+  });
+
+  const row = await db.get(
+    'SELECT wind_avg, wind_max, wind_dir FROM observations WHERE station = ? AND date = ?',
+    [s, d]
+  );
+
+  row?.wind_avg && (results.windAvg = row.wind_avg);
+  row?.wind_max && (results.windMax = row.wind_max);
+  row?.wind_dir && (results.windDir = row.wind_dir);
+
+  if (Object.keys(results).length > 0) {
+    results.time = new Date(date).toISOString();
+  }
+
+  db.close();
+  return results;
+}
 
 /**
  * Writes the currently available air observations to the database
  */
-async function storeAirObservations() {
-  const sql = sqlite3.verbose();
-  const dbPath = path.join(
-    path.dirname(fileURLToPath(import.meta.url)),
-    '..',
-    'data',
-    'observations.db'
-  );
+export async function storeAirObservations() {
+  const db = await open({
+    filename: dbPath,
+    driver: sqlite3.Database,
+  });
 
-  const db = new sql.Database(dbPath);
-
-  db.serialize(function () {
+  db.getDatabaseInstance().serialize(function () {
     db.run(`CREATE TABLE IF NOT EXISTS observations (
         station INTEGER,
         date INTEGER,
@@ -45,12 +75,13 @@ async function storeAirObservations() {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  function insert(station, measurements) {
-    const insertQuery = db.prepare(
+  async function insert(station, measurements) {
+    const insertQuery = await db.prepare(
       'INSERT OR IGNORE INTO observations VALUES (?,?,?,?,?)'
     );
+
     for (let j = 0; j < measurements.length; j += 1) {
-      insertQuery.run(
+      await insertQuery.run(
         station,
         Date.parse(measurements[j].time),
         measurements[j].windAvg,
@@ -58,7 +89,8 @@ async function storeAirObservations() {
         measurements[j].windDir
       );
     }
-    insertQuery.finalize();
+
+    await insertQuery.finalize();
   }
 
   let N = s.length;
@@ -66,12 +98,12 @@ async function storeAirObservations() {
   async function run() {
     for (let i = 0; i <= N; i += 1) {
       if (i < N) {
-        await sleep(5000); // Try not to get IP banned...
+        await sleep(1000); // Try not to get IP banned...
         const m = await scrapeAirStations(s[i].id);
 
         if (m?.length > 0) {
           console.log(m);
-          insert(s[i].id, m);
+          await insert(s[i].id, m);
         }
       } else {
         return Promise.resolve(1);
@@ -82,19 +114,3 @@ async function storeAirObservations() {
   await run();
   db.close();
 }
-
-async function main() {
-  const args = process.argv.slice(2);
-
-  if (args[0] === 'repeat') {
-    schedule.scheduleJob(JOB_ID, '0 0 */4 * * *', async () => {
-      await storeAirObservations();
-    });
-  } else {
-    await storeAirObservations();
-  }
-}
-
-await main().catch((err) => {
-  console.error(err.stack);
-});

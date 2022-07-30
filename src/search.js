@@ -2,63 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import { runQuery } from './db.js';
 import { scrapeGroundStations, scrapeAirStations } from './scraper.js';
-
-const MINUTE = 60000;
-const HOUR = 3600000;
-
-function roundToNearestMinute(date, minutes) {
-  const ms = MINUTE * minutes;
-
-  return new Date(Math.round(Date.parse(date) / ms) * ms);
-}
-
-function inTriangle(point, triangle) {
-  const cx = point[0],
-    cy = point[1],
-    t0 = triangle[0],
-    t1 = triangle[1],
-    t2 = triangle[2],
-    v0x = t2[0] - t0[0],
-    v0y = t2[1] - t0[1],
-    v1x = t1[0] - t0[0],
-    v1y = t1[1] - t0[1],
-    v2x = cx - t0[0],
-    v2y = cy - t0[1],
-    dot00 = v0x * v0x + v0y * v0y,
-    dot01 = v0x * v1x + v0y * v1y,
-    dot02 = v0x * v2x + v0y * v2y,
-    dot11 = v1x * v1x + v1y * v1y,
-    dot12 = v1x * v2x + v1y * v2y;
-
-  const b = dot00 * dot11 - dot01 * dot01,
-    inv = b === 0 ? 0 : 1 / b,
-    u = (dot11 * dot02 - dot01 * dot12) * inv,
-    v = (dot00 * dot12 - dot01 * dot02) * inv;
-
-  return u >= 0 && v >= 0 && u + v < 1;
-}
-
-function baryCentricWeights(point, triangle) {
-  // https://codeplea.com/triangular-interpolation
-  const cx = point[0],
-    cy = point[1],
-    t0 = triangle[0],
-    t1 = triangle[1],
-    t2 = triangle[2];
-
-  const w1 =
-    ((t1[1] - t2[1]) * (cx - t2[0]) + (t2[0] - t1[0]) * (cy - t2[1])) /
-    ((t1[1] - t2[1]) * (t0[0] - t2[0]) + (t2[0] - t1[0]) * (t0[1] - t2[1]));
-
-  const w2 =
-    ((t2[1] - t0[1]) * (cx - t2[0]) + (t0[0] - t2[0]) * (cy - t2[1])) /
-    ((t1[1] - t2[1]) * (t0[0] - t2[0]) + (t2[0] - t1[0]) * (t0[1] - t2[1]));
-
-  const w3 = 1 - w1 - w2;
-
-  return [w1, w2, w3];
-}
+import {
+  HOUR,
+  inTriangle,
+  baryCentricWeights,
+  roundToNearestMinute,
+} from './utils.js';
 
 function findSurroundingStationsOrNearest(lat, lon, stations) {
   function compareStation(a, b) {
@@ -277,6 +228,23 @@ export async function lookUpAirMeasurements(
     b = stationData.bounds;
   }
 
+  function compareStation(a, b) {
+    const aDist = Math.sqrt(
+      Math.pow(lat - a.lat, 2) + Math.pow(lon - a.lon, 2)
+    );
+    const bDist = Math.sqrt(
+      Math.pow(lat - b.lat, 2) + Math.pow(lon - b.lon, 2)
+    );
+
+    if (aDist < bDist) return -1;
+
+    if (aDist > bDist) return 1;
+
+    return 0;
+  }
+
+  s.sort(compareStation);
+
   const now = new Date().getTime();
   const dateMs = Date.parse(date);
   const fresh = now - dateMs < HOUR * 4;
@@ -309,11 +277,12 @@ export async function lookUpAirMeasurements(
 
     if (fresh) {
       for (let i = 0; i < surroundingStations.length; i += 1) {
-        const m = await scrapeAirStations(surroundingStations[i].id);
-        measurements.push(m);
+        measurements.push(await scrapeAirStations(surroundingStations[i].id));
       }
     } else {
-      console.log('db lookup');
+      for (let i = 0; i < surroundingStations.length; i += 1) {
+        measurements.push([await runQuery(s[i].id, matchTime)]);
+      }
     }
   } else {
     if (fresh) {
@@ -323,7 +292,7 @@ export async function lookUpAirMeasurements(
         )[0]
       );
     } else {
-      console.log('db lookup');
+      measurements.push([await runQuery(s[0].id, matchTime)]);
     }
   }
 
@@ -354,17 +323,20 @@ export async function lookUpAirMeasurements(
       nearestTimeMeasurements[1].windDir * weights[1] +
       nearestTimeMeasurements[2].windDir * weights[2];
 
-    return [windAvg, windMax, windDir];
+    return { method: 'interpolation', windAvg, windMax, windDir };
+  } else if (nearestTimeMeasurements.length === 1) {
+    return {
+      method: 'nearest',
+      windAvg: nearestTimeMeasurements[0].windAvg,
+      windMax: nearestTimeMeasurements[1].windMax,
+      windDir: nearestTimeMeasurements[2].windDir,
+    };
   }
 
-  return [
-    nearestTimeMeasurements[0].windAvg,
-    nearestTimeMeasurements[1].windMax,
-    nearestTimeMeasurements[2].windDir,
-  ];
+  return {};
 }
 
 // Test call
 console.log(
-  await lookUpAirMeasurements(64.0212, -22.1503, '2022-07-29T18:29:00.000Z')
+  await lookUpAirMeasurements(64.0212, -22.1503, '2022-07-30T11:30:00.000Z')
 );

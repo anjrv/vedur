@@ -5,8 +5,8 @@
   "main": "app.js",
   "scripts": {
     "search": "node ./src/app.js",
-    "save": "node ./src/db.js",
-    "save-repeat": "node ./src/db.js repeat",
+    "save": "node ./src/dbRunner.js",
+    "save-repeat": "node ./src/dbRunner.js repeat",
     "generateGroundStations": "node ./src/generateStations.js ground",
     "generateAirStations": "node ./src/generateStations.js"
   },
@@ -16,6 +16,7 @@
   "dependencies": {
     "node-schedule": "^2.1.0",
     "puppeteer": "^15.4.0",
+    "sqlite": "^4.1.2",
     "sqlite3": "^5.0.10"
   }
 }

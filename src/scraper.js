@@ -127,8 +127,8 @@ export async function scrapeAirStations(stationId) {
 
         const row = {
           time: `${currYear}-${d[1]}-${d[0]}T${dateString[6]}:00.000Z`,
-          windAvg: (cols[2].innerText * 0.51444).toFixed(3), // Convert to m/s to be consistent with ground
-          windMax: (cols[3].innerText * 0.51444).toFixed(3), // Convert to m/s to be consistent with ground
+          windAvg: cols[2].innerText * 0.51444, // Convert to m/s to be consistent with ground
+          windMax: cols[3].innerText * 0.51444, // Convert to m/s to be consistent with ground
           windDir: cols[1].innerText.slice(0, -2),
         };
 
