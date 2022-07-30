@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 
 import { runQuery } from './db.js';
 import { scrapeGroundStations, scrapeAirStations } from './scraper.js';
+import { validateNumber, validateDate } from './typechecking.js';
 import {
   HOUR,
   inTriangle,
@@ -142,7 +143,7 @@ function findKNearestStations(lat, lon, k, stations) {
  *
  * @returns an array of stations
  */
-export function findKNearestGroundStations(lat, lon, k, stations = undefined) {
+function findKNearestGroundStations(lat, lon, k, stations = undefined) {
   const jsonPath = path.join(
     path.dirname(fileURLToPath(import.meta.url)),
     '..',
@@ -162,7 +163,7 @@ export function findKNearestGroundStations(lat, lon, k, stations = undefined) {
  *
  * @returns an array of stations
  */
-export function findKNearestAirStations(lat, lon, k, stations = undefined) {
+function findKNearestAirStations(lat, lon, k, stations = undefined) {
   const jsonPath = path.join(
     path.dirname(fileURLToPath(import.meta.url)),
     '..',
@@ -182,7 +183,7 @@ export function findKNearestAirStations(lat, lon, k, stations = undefined) {
  *
  * @returns An object of k station: measurements[] pairs
  */
-export async function findKNearestAirStationMeasurements(
+async function findKNearestAirStationMeasurements(
   lat,
   lon,
   k,
@@ -206,7 +207,7 @@ export async function findKNearestAirStationMeasurements(
  *
  * @returns An object of k station: measurements[] pairs
  */
-export async function findKNearestGroundStationMeasurements(
+async function findKNearestGroundStationMeasurements(
   lat,
   lon,
   extra,
@@ -226,7 +227,7 @@ export async function findKNearestGroundStationMeasurements(
   return measurements;
 }
 
-export async function lookUpAirMeasurements(
+async function lookUpAirMeasurements(
   lat,
   lon,
   date,
@@ -410,7 +411,7 @@ export async function lookUpAirMeasurements(
   return {};
 }
 
-export async function lookUpGroundMeasurements(
+async function lookUpGroundMeasurements(
   lat,
   lon,
   date,
@@ -581,4 +582,62 @@ export async function lookUpGroundMeasurements(
   }
 
   return {};
+}
+
+function validateArgs(args) {
+  if (args.length < 2 || args.length > 4) {
+    console.log('Invalid number of arguments');
+    return false;
+  }
+
+  if (!validateNumber(Number(args[0]))) {
+    console.log('Latitude is invalid');
+    return false;
+  }
+
+  if (!validateNumber(Number(args[1]))) {
+    console.log('Longitude is invalid');
+    return false;
+  }
+
+  if (args[2] && !validateDate(args[2])) {
+    console.log('Date is invalid');
+    return false;
+  }
+
+  return true;
+}
+
+async function search(lat, lon, date) {
+  const ageDiff = new Date().getTime() - Date.parse(date);
+
+  let val = await lookUpAirMeasurements(lat, lon, date);
+
+  if (Object.values(val).length > 0) {
+    val.source = 'air';
+  }
+
+  if (Object.values(val).length === 0 && ageDiff < HOUR * 24 * 6) {
+    val = await lookUpGroundMeasurements(lat, lon, date);
+
+    if (Object.values.length > 0) {
+      val.source = 'ground';
+    }
+  }
+
+  if (Object.values(val).length > 0) {
+    console.log(JSON.stringify(val));
+  } else {
+    console.log(JSON.stringify({}));
+  }
+}
+
+export async function respond() {
+  const args = process.argv.slice(2);
+
+  if (!validateArgs(args)) {
+    return;
+  }
+
+  await search(args[0], args[1], args[2]);
 }
