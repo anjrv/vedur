@@ -1,8 +1,8 @@
-import {
-  findKNearestGroundStationMeasurements,
-  findKNearestAirStationMeasurements,
-} from './search.js';
-import { isInt, validateNumber, validateDate } from './typechecking.js';
+import http from 'http';
+
+import { lookUpAirMeasurements, lookUpGroundMeasurements } from './search.js';
+import { validateNumber, validateDate } from './typechecking.js';
+import { HOUR } from './utils.js';
 
 function validateArgs(args) {
   if (args.length < 2 || args.length > 4) {
@@ -25,36 +25,41 @@ function validateArgs(args) {
     return false;
   }
 
-  if (args[3] && !isInt(args[3])) {
-    console.log('Number of stations is invalid');
-    return false;
-  }
-
   return true;
 }
 
-async function search(lat, lon, date, k = undefined) {
+async function search(lat, lon, date) {
   const ageDiff = new Date().getTime() - Date.parse(date);
 
+  let val = await lookUpAirMeasurements(lat, lon, date);
 
+  if (Object.values(val).length > 0) {
+    val.source = 'air';
+  }
+
+  if (Object.values(val).length === 0 && ageDiff < HOUR * 24 * 6) {
+    val = await lookUpGroundMeasurements(lat, lon, date);
+
+    if (Object.values.length > 0) {
+      val.source = 'ground';
+    }
+  }
+
+  if (Object.values(val).length > 0) {
+    console.log(JSON.stringify(val));
+  } else {
+    console.log(JSON.stringify({}));
+  }
 }
 
 async function respond() {
-  if (process.env.npm_config_listen) {
-    console.log('TODO!');
-  } else {
-    const args = process.argv.slice(2);
+  const args = process.argv.slice(2);
 
-    if (!validateArgs(args)) {
-      return;
-    }
-
-    if (args.length === 3) {
-      await search(args[0], args[1], args[2]);
-    }
-
-    await search(args[0], args[1], args[2], args[3]);
+  if (!validateArgs(args)) {
+    return;
   }
+
+  await search(args[0], args[1], args[2]);
 }
 
 await respond().catch((err) => {

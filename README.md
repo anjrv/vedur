@@ -24,15 +24,20 @@ npm install
 *Any of the following commands should be run in the context of the project root folder*
 
 ### To regenerate responding stations in case something has changed:
-
 ```
 npm run generateAirStations
 
 npm run generateGroundStations
 ```
 
-### (DEPRECATED) To run a single query:
+### To generate locally stored air observations:
+```
+npm run save // Scrapes all currently provided measurements
 
+npm run save-repeat // Schedules to scrape provided measurements in four hour intervals
+```
+
+### To run a query:
 ```
 npm run search -- <args>
 ```
@@ -41,21 +46,11 @@ Mandatory arguments are:
 
 * `latitude` Floating point number
 * `longitude` Floating point number
-
-Additional arguments:
-
 * `date` Date string
-* `stations` Integer
 
 Arguments have to be supplied in the above order.
 
-Examples:
+Example:
 ```
-npm run search -- 64.0212 -22.1503
-```
-```
-npm run search -- 64.0212 -22.1503 2022/07/21
-```
-```
-npm run search -- 64.0212 -22.1503 2022/07/21 2
+npm run search -- 64.0212 -22.1503 2022-07-30T11:59:00.000Z
 ```

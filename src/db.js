@@ -4,6 +4,7 @@ import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 import { fileURLToPath } from 'url';
 
+import { HOUR } from './utils.js';
 import { scrapeAirStations } from './scraper.js';
 import { isInt, validateDate } from './typechecking.js';
 
@@ -93,6 +94,17 @@ export async function storeAirObservations() {
     await insertQuery.finalize();
   }
 
+  async function clearOlds() {
+    const oldest = new Date().getTime() - HOUR * 24 * 14;
+
+    const deleteQuery = await db.prepare(
+      'DELETE FROM observations WHERE date < ?'
+    );
+
+    await deleteQuery.run(oldest);
+    await deleteQuery.finalize();
+  }
+
   let N = s.length;
 
   async function run() {
@@ -111,6 +123,7 @@ export async function storeAirObservations() {
     }
   }
 
+  await clearOlds();
   await run();
   db.close();
 }
