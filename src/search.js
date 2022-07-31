@@ -282,7 +282,6 @@ async function lookUpAirMeasurements(
     lon <= b.maxLon
   ) {
     for (let i = 0; i < 3; i += 1) {
-      // Try three cycles, blacklist non responsive stations
       const surroundingStations = findSurroundingAirStationsOrNearest(
         lat,
         lon,
@@ -290,20 +289,19 @@ async function lookUpAirMeasurements(
         s
       );
 
-      if (fresh) {
-        for (let i = 0; i < surroundingStations.length; i += 1) {
-          measurements.push(await scrapeAirStations(surroundingStations[i].id));
-        }
-      } else {
-        for (let i = 0; i < surroundingStations.length; i += 1) {
-          measurements.push([
-            await runQuery(surroundingStations[i].id, matchTime),
-          ]);
+      for (let j = 0; j < surroundingStations.length; j += 1) {
+        const m = await runQuery(surroundingStations[j].id, matchTime);
+
+        if (Object.entries(m).length !== 0) {
+          measurements.push([m]);
         }
       }
 
-      // Cannot find a triangle, resort to nearest
-      if (surroundingStations.length === 1) break;
+      if (measurements.length !== surroundingStations.length && fresh) {
+        for (let j = 0; j < surroundingStations.length; j += 1) {
+          measurements.push(await scrapeAirStations(surroundingStations[j].id));
+        }
+      }
 
       if (
         measurements.length === 3 &&
@@ -319,19 +317,29 @@ async function lookUpAirMeasurements(
             [surroundingStations[2].lat, surroundingStations[2].lon],
           ]
         );
-
-        break;
       } else {
-        if (measurements[0].length === 0)
+        if (measurements[0]?.length === 0)
           blacklist.push(surroundingStations[0].id);
-        if (measurements[1].length === 0)
+        if (measurements[1]?.length === 0)
           blacklist.push(surroundingStations[1].id);
-        if (measurements[2].length === 0)
+        if (measurements[2]?.length === 0)
           blacklist.push(surroundingStations[2].id);
+      }
+
+      if (weights || surroundingStations.length === measurements.length) {
+        break;
       }
     }
   } else {
-    if (fresh) {
+    for (let i = 0; i < 3; i += 1) {
+      const m = await runQuery(s[i].id, matchTime);
+      if (m.length > 0) {
+        measurements.push(m);
+        break;
+      }
+    }
+
+    if (measurements.length === 0 && fresh) {
       const vals = Object.values(
         await findKNearestAirStationMeasurements(lat, lon, 3, s)
       );
@@ -345,14 +353,6 @@ async function lookUpAirMeasurements(
           ? vals[2]
           : []
       );
-    } else {
-      for (let i = 0; i < 3; i += 1) {
-        const m = await runQuery(s[i].id, matchTime);
-        if (m.length > 0) {
-          measurements.push(m);
-          break;
-        }
-      }
     }
   }
 
@@ -479,14 +479,15 @@ async function lookUpGroundMeasurements(
         s
       );
 
-      for (let i = 0; i < surroundingStations.length; i += 1) {
-        measurements.push(
-          await scrapeGroundStations(surroundingStations[i].id, stale)
-        );
+      for (let j = 0; j < surroundingStations.length; j += 1) {
+        const m = await scrapeGroundStations(surroundingStations[i].id, stale);
+        measurements.push(m);
       }
 
       // Cannot find a triangle, resort to nearest
-      if (surroundingStations.length === 1) break;
+      if (surroundingStations.length === 1) {
+        break;
+      }
 
       if (
         measurements.length === 3 &&
@@ -502,8 +503,6 @@ async function lookUpGroundMeasurements(
             [surroundingStations[2].lat, surroundingStations[2].lon],
           ]
         );
-
-        break;
       } else {
         if (measurements[0].length === 0)
           blacklist.push(surroundingStations[0].id);
@@ -512,10 +511,12 @@ async function lookUpGroundMeasurements(
         if (measurements[2].length === 0)
           blacklist.push(surroundingStations[2].id);
       }
+
+      if (weights) break;
     }
   } else {
     const vals = Object.values(
-      await findKNearestGroundStationMeasurements(lat, lon, 3, s)
+      await findKNearestGroundStationMeasurements(lat, lon, stale, 3, s)
     );
 
     measurements.push(
