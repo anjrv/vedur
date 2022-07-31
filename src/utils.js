@@ -4,7 +4,7 @@ export const HOUR = 3600000;
 export function roundToNearestMinute(date, minutes) {
   const ms = MINUTE * minutes;
 
-  return new Date(Math.round(Date.parse(date) / ms) * ms);
+  return new Date(Math.floor(Date.parse(date) / ms) * ms);
 }
 
 export function inTriangle(point, triangle) {
