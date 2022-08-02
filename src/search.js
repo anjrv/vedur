@@ -12,14 +12,6 @@ import {
   roundToNearestMinute,
 } from './utils.js';
 
-function getStationInfo(stationId, stations) {
-  for (let i = 0; i < stations.length; i += 1) {
-    if (stations[i].id === stationId) {
-      return stations[i];
-    }
-  }
-}
-
 function findSurroundingStationsOrNearest(lat, lon, blacklist, stations) {
   function compareStation(a, b) {
     const aDist = Math.sqrt(
@@ -54,29 +46,13 @@ function findSurroundingStationsOrNearest(lat, lon, blacklist, stations) {
             ]
           )
         )
-          return [
-            {
-              id: stations[i].id,
-              lat: stations[i].lat,
-              lon: stations[i].lon,
-            },
-            {
-              id: stations[j].id,
-              lat: stations[j].lat,
-              lon: stations[j].lon,
-            },
-            {
-              id: stations[k].id,
-              lat: stations[k].lat,
-              lon: stations[k].lon,
-            },
-          ];
+          return [stations[i], stations[j], stations[k]];
       }
     }
   }
 
   // Fallback single nearest station
-  return [{ id: stations[0].id, lat: stations[0].lat, lon: stations[0].lon }];
+  return [stations[0]];
 }
 
 function findSurroundingAirStationsOrNearest(
@@ -344,7 +320,7 @@ async function lookUpAirMeasurements(
 
       if (weights || surroundingStations.length === measurements.length) {
         for (let j = 0; j < surroundingStations.length; j += 1) {
-          chosenStations.push(getStationInfo(surroundingStations[j].id, s));
+          chosenStations.push(surroundingStations[j]);
         }
         break;
       }
@@ -545,7 +521,7 @@ async function lookUpGroundMeasurements(
 
       if (weights || surroundingStations.length === measurements.length) {
         for (let j = 0; j < surroundingStations.length; j += 1) {
-          chosenStations.push(getStationInfo(surroundingStations[j].id, s));
+          chosenStations.push(surroundingStations[j]);
         }
         break;
       }
