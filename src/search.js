@@ -289,17 +289,25 @@ async function lookUpAirMeasurements(
         s
       );
 
+      const responded = new Array(surroundingStations.length).fill(false);
+
       for (let j = 0; j < surroundingStations.length; j += 1) {
         const m = await runQuery(surroundingStations[j].id, matchTime);
 
         if (Object.entries(m).length !== 0) {
+          responded[j] = true;
           measurements.push([m]);
         }
       }
 
       if (measurements.length !== surroundingStations.length && fresh) {
         for (let j = 0; j < surroundingStations.length; j += 1) {
-          measurements.push(await scrapeAirStations(surroundingStations[j].id));
+          const m = await scrapeAirStations(surroundingStations[j].id);
+
+          if (m?.length > 0) {
+            responded[j] = true;
+            measurements.push(m);
+          }
         }
       }
 
@@ -318,12 +326,11 @@ async function lookUpAirMeasurements(
           ]
         );
       } else {
-        if (measurements[0]?.length === 0)
-          blacklist.push(surroundingStations[0].id);
-        if (measurements[1]?.length === 0)
-          blacklist.push(surroundingStations[1].id);
-        if (measurements[2]?.length === 0)
-          blacklist.push(surroundingStations[2].id);
+        for (let j = 0; j < surroundingStations.length; j += 1) {
+          if (!responded[j]) {
+            blacklist.push(surroundingStations[j].id);
+          }
+        }
       }
 
       if (weights || surroundingStations.length === measurements.length) {
@@ -333,7 +340,7 @@ async function lookUpAirMeasurements(
   } else {
     for (let i = 0; i < 3; i += 1) {
       const m = await runQuery(s[i].id, matchTime);
-      if (m.length > 0) {
+      if (m?.length > 0) {
         measurements.push(m);
         break;
       }
@@ -460,6 +467,7 @@ async function lookUpGroundMeasurements(
   s.sort(compareStation);
 
   const matchTime = Date.parse(roundToNearestMinute(date, 60));
+
   const measurements = [];
   const blacklist = [];
   let weights = null;
@@ -479,14 +487,15 @@ async function lookUpGroundMeasurements(
         s
       );
 
+      const responded = new Array(surroundingStations.length).fill(false);
+
       for (let j = 0; j < surroundingStations.length; j += 1) {
         const m = await scrapeGroundStations(surroundingStations[i].id, stale);
-        measurements.push(m);
-      }
 
-      // Cannot find a triangle, resort to nearest
-      if (surroundingStations.length === 1) {
-        break;
+        if (m?.length > 0) {
+          responded[j] = true;
+          measurements.push(m);
+        }
       }
 
       if (
@@ -504,15 +513,16 @@ async function lookUpGroundMeasurements(
           ]
         );
       } else {
-        if (measurements[0].length === 0)
-          blacklist.push(surroundingStations[0].id);
-        if (measurements[1].length === 0)
-          blacklist.push(surroundingStations[1].id);
-        if (measurements[2].length === 0)
-          blacklist.push(surroundingStations[2].id);
+        for (let j = 0; j < surroundingStations.length; j += 1) {
+          if (!responded[j]) {
+            blacklist.push(surroundingStations[j].id);
+          }
+        }
       }
 
-      if (weights) break;
+      if (weights || surroundingStations.length === measurements.length) {
+        break;
+      }
     }
   } else {
     const vals = Object.values(
@@ -539,6 +549,19 @@ async function lookUpGroundMeasurements(
     for (let j = 0; j < measurements[i].length; j += 1) {
       if (Date.parse(measurements[i][j].time) === matchTime) {
         nearestTimeMeasurements.push(measurements[i][j]);
+      }
+    }
+  }
+
+  // Likely landed on a station that returns every 3 hours
+  if (nearestTimeMeasurements.length === 0) {
+    const matchTimeAlt = Date.parse(roundToNearestMinute(date, 180));
+
+    for (let i = 0; i < measurements.length; i += 1) {
+      for (let j = 0; j < measurements[i].length; j += 1) {
+        if (Date.parse(measurements[i][j].time) === matchTimeAlt) {
+          nearestTimeMeasurements.push(measurements[i][j]);
+        }
       }
     }
   }
