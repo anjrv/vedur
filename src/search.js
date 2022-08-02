@@ -279,7 +279,10 @@ async function lookUpAirMeasurements(
       for (let j = 0; j < surroundingStations.length; j += 1) {
         const m = await runQuery(surroundingStations[j].id, matchTime);
 
-        if (Object.entries(m).length !== 0) {
+        if (
+          Object.entries(m).length !== 0 &&
+          validateNumber(Number(m.windAvg))
+        ) {
           responded[j] = true;
           measurements.push([m]);
         }
@@ -289,7 +292,7 @@ async function lookUpAirMeasurements(
         for (let j = 0; j < surroundingStations.length; j += 1) {
           const m = await scrapeAirStations(surroundingStations[j].id);
 
-          if (m?.length > 0) {
+          if (m?.length > 0 && validateNumber(Number(m[0].windAvg))) {
             responded[j] = true;
             measurements.push(m);
           }
@@ -328,8 +331,9 @@ async function lookUpAirMeasurements(
   } else {
     for (let i = 0; i < 3; i += 1) {
       const m = await runQuery(s[i].id, matchTime);
-      if (m?.length > 0) {
-        measurements.push(m);
+
+      if (Object.entries(m).length > 0) {
+        measurements.push([m]);
         chosenStations.push(s[i]);
         break;
       }
@@ -340,13 +344,19 @@ async function lookUpAirMeasurements(
         await findKNearestAirStationMeasurements(lat, lon, 3, s)
       );
 
-      if (vals[0].length > 0) {
+      if (vals[0].length > 0 && validateNumber(Number(vals[0].windAvg))) {
         measurements.push(vals[0]);
         chosenStations.push(s[0]);
-      } else if (vals[1].length > 0) {
+      } else if (
+        vals[1].length > 0 &&
+        validateNumber(Number(vals[1].windAvg))
+      ) {
         measurements.push(vals[1]);
         chosenStations.push(s[1]);
-      } else if (vals[2].length > 0) {
+      } else if (
+        vals[2].length > 0 &&
+        validateNumber(Number(vals[2].windAvg))
+      ) {
         measurements.push(vals[2]);
         chosenStations.push(s[2]);
       } else {
@@ -491,7 +501,7 @@ async function lookUpGroundMeasurements(
       for (let j = 0; j < surroundingStations.length; j += 1) {
         const m = await scrapeGroundStations(surroundingStations[j].id, stale);
 
-        if (m?.length > 0) {
+        if (m?.length > 0 && validateNumber(Number(m[0].windAvg))) {
           responded[j] = true;
           measurements.push(m);
         }
@@ -531,13 +541,13 @@ async function lookUpGroundMeasurements(
       await findKNearestGroundStationMeasurements(lat, lon, stale, 3, s)
     );
 
-    if (vals[0].length > 0) {
+    if (vals[0].length > 0 && validateNumber(Number(vals[0].windAvg))) {
       measurements.push(vals[0]);
       chosenStations.push(s[0]);
-    } else if (vals[1].length > 0) {
+    } else if (vals[1].length > 0 && validateNumber(Number(vals[1].windAvg))) {
       measurements.push(vals[1]);
       chosenStations.push(s[1]);
-    } else if (vals[2].length > 0) {
+    } else if (vals[2].length > 0 && validateNumber(Number(vals[2].windAvg))) {
       measurements.push(vals[2]);
       chosenStations.push(s[2]);
     } else {
