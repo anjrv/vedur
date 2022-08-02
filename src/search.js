@@ -490,7 +490,7 @@ async function lookUpGroundMeasurements(
       const responded = new Array(surroundingStations.length).fill(false);
 
       for (let j = 0; j < surroundingStations.length; j += 1) {
-        const m = await scrapeGroundStations(surroundingStations[i].id, stale);
+        const m = await scrapeGroundStations(surroundingStations[j].id, stale);
 
         if (m?.length > 0) {
           responded[j] = true;
