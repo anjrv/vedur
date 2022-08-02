@@ -12,6 +12,14 @@ import {
   roundToNearestMinute,
 } from './utils.js';
 
+function getStationInfo(stationId, stations) {
+  for (let i = 0; i < stations.length; i += 1) {
+    if (stations[i].id === stationId) {
+      return stations[i];
+    }
+  }
+}
+
 function findSurroundingStationsOrNearest(lat, lon, blacklist, stations) {
   function compareStation(a, b) {
     const aDist = Math.sqrt(
@@ -271,6 +279,7 @@ async function lookUpAirMeasurements(
   const dateMs = Date.parse(date);
   const fresh = now - dateMs < HOUR * 4;
   const matchTime = Date.parse(roundToNearestMinute(date, 10));
+  const chosenStations = [];
   const measurements = [];
   const blacklist = [];
   let weights = null;
@@ -334,6 +343,9 @@ async function lookUpAirMeasurements(
       }
 
       if (weights || surroundingStations.length === measurements.length) {
+        for (let j = 0; j < surroundingStations.length; j += 1) {
+          chosenStations.push(getStationInfo(surroundingStations[j].id, s));
+        }
         break;
       }
     }
@@ -342,6 +354,7 @@ async function lookUpAirMeasurements(
       const m = await runQuery(s[i].id, matchTime);
       if (m?.length > 0) {
         measurements.push(m);
+        chosenStations.push(s[i]);
         break;
       }
     }
@@ -351,15 +364,18 @@ async function lookUpAirMeasurements(
         await findKNearestAirStationMeasurements(lat, lon, 3, s)
       );
 
-      measurements.push(
-        vals[0].length > 0
-          ? vals[0]
-          : vals[1].length > 0
-          ? vals[1]
-          : vals[2].length > 0
-          ? vals[2]
-          : []
-      );
+      if (vals[0].length > 0) {
+        measurements.push(vals[0]);
+        chosenStations.push(s[0]);
+      } else if (vals[1].length > 0) {
+        measurements.push(vals[1]);
+        chosenStations.push(s[1]);
+      } else if (vals[2].length > 0) {
+        measurements.push(vals[2]);
+        chosenStations.push(s[2]);
+      } else {
+        measurements.push([]);
+      }
     }
   }
 
@@ -395,7 +411,7 @@ async function lookUpAirMeasurements(
 
     // Correct for crossing 0 e.g. interpolating between 2 degrees and 358 degrees
     if (Math.max(...winds) - Math.min(...winds) > 320) {
-      for (let i = 0; i < winds.length; winds += 1) {
+      for (let i = 0; i < winds.length; i += 1) {
         if (winds[i] > 320) winds[i] -= 360;
       }
     }
@@ -405,9 +421,16 @@ async function lookUpAirMeasurements(
 
     if (windDir < 0) windDir += 360;
 
-    return { method: 'interpolation', windAvg, windMax, windDir };
+    return {
+      stations: chosenStations,
+      method: 'interpolation',
+      windAvg,
+      windMax,
+      windDir,
+    };
   } else if (nearestTimeMeasurements.length > 0) {
     return {
+      stations: chosenStations,
       method: 'nearest',
       windAvg: nearestTimeMeasurements[0].windAvg,
       windMax: nearestTimeMeasurements[0].windMax,
@@ -467,7 +490,7 @@ async function lookUpGroundMeasurements(
   s.sort(compareStation);
 
   const matchTime = Date.parse(roundToNearestMinute(date, 60));
-
+  const chosenStations = [];
   const measurements = [];
   const blacklist = [];
   let weights = null;
@@ -521,6 +544,9 @@ async function lookUpGroundMeasurements(
       }
 
       if (weights || surroundingStations.length === measurements.length) {
+        for (let j = 0; j < surroundingStations.length; j += 1) {
+          chosenStations.push(getStationInfo(surroundingStations[j].id, s));
+        }
         break;
       }
     }
@@ -529,15 +555,18 @@ async function lookUpGroundMeasurements(
       await findKNearestGroundStationMeasurements(lat, lon, stale, 3, s)
     );
 
-    measurements.push(
-      vals[0].length > 0
-        ? vals[0]
-        : vals[1].length > 0
-        ? vals[1]
-        : vals[2].length > 0
-        ? vals[2]
-        : []
-    );
+    if (vals[0].length > 0) {
+      measurements.push(vals[0]);
+      chosenStations.push(s[0]);
+    } else if (vals[1].length > 0) {
+      measurements.push(vals[1]);
+      chosenStations.push(s[1]);
+    } else if (vals[2].length > 0) {
+      measurements.push(vals[2]);
+      chosenStations.push(s[2]);
+    } else {
+      measurements.push([]);
+    }
   }
 
   // Did not find anything, exit early
@@ -585,7 +614,7 @@ async function lookUpGroundMeasurements(
 
     // Correct for crossing 0 e.g. interpolating between 2 degrees and 358 degrees
     if (Math.max(...winds) - Math.min(...winds) > 320) {
-      for (let i = 0; i < winds.length; winds += 1) {
+      for (let i = 0; i < winds.length; i += 1) {
         if (winds[i] > 320) winds[i] -= 360;
       }
     }
@@ -595,9 +624,16 @@ async function lookUpGroundMeasurements(
 
     if (windDir < 0) windDir += 360;
 
-    return { method: 'interpolation', windAvg, windMax, windDir };
+    return {
+      stations: chosenStations,
+      method: 'interpolation',
+      windAvg,
+      windMax,
+      windDir,
+    };
   } else if (nearestTimeMeasurements.length > 0) {
     return {
+      stations: chosenStations,
       method: 'nearest',
       windAvg: nearestTimeMeasurements[0].windAvg,
       windMax: nearestTimeMeasurements[0].windMax,
