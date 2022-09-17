@@ -19,8 +19,12 @@ export async function scrapeGroundStations(stationId, olderThan12h) {
     });
 
     const page = await browser.newPage();
+    page.setDefaultNavigationTimeout(1000); // 30 seconds is way too long if we have to fallback to this
 
-    await page.goto(GROUND_URL + stationId); // Grab observations for station id
+    await page.goto(GROUND_URL + stationId).catch((_e) => {
+      return []; // For timeout error we received nothing
+    });
+
     if (olderThan12h) await page.click('#stablink1'); // Click on 6 day history
     const data = await page.evaluate(() => {
       const rows = [];
@@ -110,8 +114,11 @@ export async function scrapeAirStations(stationId) {
     });
 
     const page = await browser.newPage();
+    page.setDefaultNavigationTimeout(1000); // 30 seconds is way too long if we have to fallback to this
 
-    await page.goto(AIR_URL + stationId);
+    await page.goto(AIR_URL + stationId).catch((_e) => {
+      return []; // For timeout error we received nothing
+    });
     const data = await page.evaluate(() => {
       const rows = [];
       const items = document.querySelectorAll('tr');
